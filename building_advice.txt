@@ -1,0 +1,4 @@
+Database Recommendations:
+    SQLite for testing
+    PostgreSQL or MongoDB/Firestore for deployment
+

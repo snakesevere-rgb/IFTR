@@ -3,7 +3,7 @@
 # Entry file: app/main.py
 # Server: python -m uvicorn app.main:app --reload
 
-print("=== MAIN.PY IS LOADING MASHALLAH ===")
+print("=== MAIN.PY IS LOADING ===")
 
 from fastapi import FastAPI
 import encryption

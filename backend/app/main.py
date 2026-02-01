@@ -6,8 +6,7 @@
 print("=== MAIN.PY IS LOADING ===")
 
 from fastapi import FastAPI
-import encryption
-import logging #just in case
+from ..app.core import encryption
 
 ##### TO RUN: ######
 # cd ~/PycharmProjects/iftr
@@ -33,4 +32,4 @@ async def get_user(user_id: int):
 async def create_item(name: str, price: float):
     return {"item": name, "price": price, "created": True}
 
-print("Encrpytion test passed:", encryption.test_aes_encryption())
+print("Encryption test passed:", encryption.test_aes_encryption())

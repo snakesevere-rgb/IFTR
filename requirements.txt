@@ -10,3 +10,5 @@ pandas==2.1.3      # For data analysis
 python-multipart==0.0.6
 python-jose[cryptography]==3.3.0  # JWT for later
 passlib[bcrypt]==1.7.4           # Password hashing for later
+Pillow>=10.0.0  # For photo optimization
+certifi>=2024.12.14

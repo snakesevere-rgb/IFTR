@@ -14,8 +14,9 @@ from pydantic import Field, ConfigDict, field_validator
 from decimal import Decimal
 
 # Import from same package
-from .general import IFTRBaseModel, generate_id, OrderStatus, DeliveryInstructionType
-from .encrypted_models import EncryptedAddress
+from models.general import IFTRBaseModel, OrderStatus, DeliveryInstructionType
+from models.encrypted_models import EncryptedAddress
+from core.ids import generate_id
 
 import logging
 
@@ -45,25 +46,6 @@ class ProofType(str, Enum):
     SIGNATURE = "signature"
     OTP = "otp"                   # One-time password
     CALL = "call"                 # Phone call verification
-
-
-# ===== MODELS =====
-class DeliveryProof(IFTRBaseModel):
-    """Evidence that delivery was completed"""
-    proof_id: str = Field(default_factory=lambda: generate_id("proof"))
-    delivery_id: str
-    proof_type: ProofType
-
-    # Proof data (encrypted where sensitive)
-    data: str  # Could be photo URL, GPS coordinates, signature, etc.
-    metadata: Dict[str, Any] = Field(default_factory=dict)
-
-    # Verification
-    verified_by: Optional[str] = None  # support/admin who verified
-    verified_at: Optional[datetime] = None
-    automated_verification: bool = False
-
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # ===== MODELS =====

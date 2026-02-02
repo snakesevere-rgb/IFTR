@@ -11,7 +11,7 @@ from enum import Enum
 from decimal import Decimal
 from pydantic import BaseModel, Field, ConfigDict, field_validator, computed_field
 
-from .general import IFTRBaseModel, generate_id
+from app.models.general import IFTRBaseModel, generate_id
 
 
 # ===== ENUMS =====

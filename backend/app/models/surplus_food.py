@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
 from datetime import datetime, timezone
 from enum import Enum
-from ..core.ids import generate_id
+from app.core.ids import generate_id
 from ..models.encrypted_models import EncryptedLocation
 
 # Surplus Food Models

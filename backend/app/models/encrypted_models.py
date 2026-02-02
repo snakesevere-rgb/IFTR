@@ -1,8 +1,8 @@
-from .general import IFTRBaseModel
-from .general import AddressTier
+from app.models.general import IFTRBaseModel
+from app.models.general import AddressTier
 from typing import Optional, TYPE_CHECKING
 from datetime import datetime, timezone
-from ..core.ids import generate_id
+from app.core.ids import generate_id
 
 from pydantic import ConfigDict, Field
 

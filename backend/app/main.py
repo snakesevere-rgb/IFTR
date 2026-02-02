@@ -6,7 +6,7 @@
 print("=== MAIN.PY IS LOADING ===")
 
 from fastapi import FastAPI
-from ..app.core import encryption
+from core import encryption
 
 ##### TO RUN: ######
 # cd ~/PycharmProjects/iftr

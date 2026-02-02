@@ -14,21 +14,14 @@ from enum import Enum
 from pydantic import BaseModel, Field, ConfigDict, EmailStr, SecretStr, field_validator
 import re
 
-from .general import IFTRBaseModel, generate_id
-from .encrypted_models import EncryptedLocation
+from app.models.general import IFTRBaseModel, generate_id, UserRole
+from app.models.encrypted_models import EncryptedLocation
+from app.contribution_scores import contributionScore, contributionTier
+from app.contribution_benefits import ActiveBenefit
 
+from decimal import Decimal
 
 # ===== ENUMS =====
-class UserRole(str, Enum):
-    """User roles in the system"""
-    CUSTOMER = "customer"  # Regular customer ordering food
-    DRIVER = "driver"  # Delivery driver
-    RESTAURANT_ADMIN = "restaurant_admin"  # Restaurant manager/owner
-    ORGANIZATION_ADMIN = "organization_admin"  # Food bank/charity admin
-    SUPPORT = "support"  # Customer support staff
-    ADMIN = "admin"  # System administrator
-
-
 class CalendarPreference(str, Enum):
     """Calendar preferences for cultural/religious needs"""
     GREGORIAN = "gregorian"  # Default Western calendar
@@ -54,6 +47,11 @@ class UserBase(IFTRBaseModel):
     phone: Optional[str] = Field(None, pattern=r'^\+?[1-9]\d{1,14}$')  # E.164 format
     picture: Optional[str] = None  # URL to profile picture
     preferred_calendar: CalendarPreference = CalendarPreference.GREGORIAN
+    credits: Decimal = 0.0 # Can be used for delivery orders instead of cash
+                           # Given as remuneration for errors
+                           # Before cashing out, earnings can be used as credits instead
+                           # This decreases credit card processing fees if earning user intends to order anyway
+    # =============== ADD LANGUAGE OPTIONS ===============
 
     @field_validator('name')
     @classmethod
@@ -209,6 +207,57 @@ class UserUpdate(IFTRBaseModel):
     preferred_calendar: Optional[CalendarPreference] = None
     theme_preference: Optional[ThemePreference] = None
     notification_preferences: Optional[Dict[str, bool]] = None
+
+class UserWithContribution(UserDB):
+
+    """
+    User model extended with contribution functionality
+    """
+    contribution: Optional[contributionScore] = None
+
+    @property
+    def contribution_score(self) -> int:
+        """Get user's contribution score, default to 0 if not set"""
+        return self.contribution.total_contribution if self.contribution else 0
+
+    @property
+    def contribution_tier(self) -> contributionTier:
+        """Get user's contribution tier"""
+        return self.contribution.current_tier if self.contribution else contributionTier.NEWCOMER
+
+    @property
+    def active_benefits(self) -> List[ActiveBenefit]:
+        """Get user's active benefits (would come from database)"""
+        # This would typically be a relationship
+        return []
+
+    def can_access_priority_deliveries(self) -> bool:
+        """Check if user can access priority deliveries (for drivers)"""
+        if self.role != UserRole.DRIVER:
+            return False
+
+        return self.contribution_tier in [
+            contributionTier.CHAMPION,
+            contributionTier.HERO,
+            contributionTier.LEGEND
+        ]
+
+    def get_delivery_priority_boost(self) -> float:
+        """Get priority boost for delivery access based on contribution"""
+        if not self.contribution:
+            return 1.0
+
+        # Higher contribution = higher boost
+        boost_map = {
+            contributionTier.NEWCOMER: 1.0,
+            contributionTier.CONTRIBUTOR: 1.1,
+            contributionTier.HELPER: 1.2,
+            contributionTier.CHAMPION: 1.4,
+            contributionTier.HERO: 1.6,
+            contributionTier.LEGEND: 2.0,
+        }
+
+        return boost_map.get(self.contribution_tier, 1.0)
 
 
 # ===== HELPER FUNCTIONS =====

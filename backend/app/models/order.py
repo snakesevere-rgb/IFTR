@@ -1,11 +1,11 @@
 MAX_TIP_AMOUNT = 200
 MAX_TIP_PERCENTAGE = 200
 
-from typing import List, Dict, Optional, TYPE_CHECKING
+from typing import List, Dict, Optional, TYPE_CHECKING, Any
 from decimal import Decimal
 from pydantic import field_validator
-from ..core.encryption import encrypt_instructions, decrypt_instructions
-from ..core.ids import generate_id
+from core.encryption import encrypt_instructions, decrypt_instructions
+from core.ids import generate_id
 from datetime import timezone
 from pydantic import Field, field_validator, ConfigDict, validator
 
@@ -14,24 +14,140 @@ from pydantic import Field
 from datetime import datetime
 
 # Import from general
-from .payment import PaymentStatus, DeliveryInstructionType, OrderStatus, IFTRBaseModel
-from .encrypted_models import EncryptedLocation
+from models.payment import PaymentStatus
+from models.encrypted_models import EncryptedLocation
+from models.general import DeliveryInstructionType, OrderStatus, IFTRBaseModel
 
 if TYPE_CHECKING:
-    from .delivery import Delivery
+    from models.delivery import Delivery
 
 import logging
 
 
 logger = logging.getLogger(__name__)
 
+class SelectedOption(IFTRBaseModel):
+    """A user's selection for a menu item option"""
+    option_id: str
+    option_name: str
+    selected_choices: List[Dict[str, Any]] = Field(default_factory=list)  # Selected choice objects
+    selected_quantity: int = 0  # For quantity type
+    selected_text: str = ""  # For text type
+    selected_boolean: bool = False  # For boolean type
+    extra_cost: float = 0.0
+
+    @property
+    def display_summary(self) -> str:
+        """Generate a human-readable summary of the selection"""
+        if self.selected_choices:
+            names = [choice.get('name', '') for choice in self.selected_choices]
+            return f"{self.option_name}: {', '.join(names)}"
+        elif self.selected_quantity > 0:
+            return f"{self.option_name}: {self.selected_quantity}x"
+        elif self.selected_text:
+            return f"{self.option_name}: {self.selected_text[:20]}..."
+        elif self.selected_boolean:
+            return f"{self.option_name}: Yes"
+        return f"{self.option_name}"
+
+
+class CustomizedOrderItem(IFTRBaseModel):
+    """Order item with user-selected customizations"""
+    item_id: str
+    name: str
+    base_price: float
+    quantity: int
+
+    # Customizations
+    selected_options: List[SelectedOption] = Field(default_factory=list)
+    special_instructions: str = ""  # Free text instructions
+
+    # Modifiers applied
+    applied_modifiers: List[str] = Field(default_factory=list)  # modifier_ids
+
+    @property
+    def total_price(self) -> float:
+        """Calculate total price including customizations"""
+        item_total = self.base_price * self.quantity
+
+        # Add option costs
+        for option in self.selected_options:
+            item_total += option.extra_cost * self.quantity
+
+        return item_total
+
+    @property
+    def customization_summary(self) -> List[str]:
+        """Get list of customization descriptions"""
+        summaries = []
+
+        # Add option summaries
+        for option in self.selected_options:
+            summary = option.display_summary
+            if summary:
+                summaries.append(summary)
+
+        # Add special instructions if present
+        if self.special_instructions:
+            summaries.append(f"Note: {self.special_instructions[:30]}...")
+
+        return summaries
+
+    @property
+    def is_customized(self) -> bool:
+        """Check if item has any customizations"""
+        return bool(self.selected_options or self.special_instructions)
+
 class OrderItem(IFTRBaseModel):
     item_id: str
     name: str
     quantity: int
-    price: float
+    base_price: float  # Base price without customizations
+
+    # Customizations
+    selected_options: List[SelectedOption] = Field(default_factory=list)
+    special_instructions: str = ""
+    applied_modifiers: List[str] = Field(default_factory=list)
+
+    # Calculated fields
     is_surplus: bool = False
-    is_drink: bool = False  # For driver to know if order has drinks
+    is_drink: bool = False # important for delivery planning
+
+    @property
+    def price(self) -> float:
+        """Calculate final price including customizations"""
+        item_total = self.base_price * self.quantity
+
+        # Add option costs
+        for option in self.selected_options:
+            item_total += option.extra_cost * self.quantity
+
+        return item_total
+
+    @property
+    def customization_cost(self) -> float:
+        """Calculate additional cost from customizations"""
+        return sum(option.extra_cost for option in self.selected_options) * self.quantity
+
+    @property
+    def description(self) -> str:
+        """Generate descriptive text including customizations"""
+        if not self.selected_options and not self.special_instructions:
+            return self.name
+
+        parts = [self.name]
+
+        # Add customization summaries
+        for option in self.selected_options:
+            summary = option.display_summary
+            if summary:
+                parts.append(f"  • {summary}")
+
+        # Add special instructions
+        if self.special_instructions:
+            parts.append(f"  • Note: {self.special_instructions}")
+
+        return "\n".join(parts)
 
 class Order(IFTRBaseModel):
     """

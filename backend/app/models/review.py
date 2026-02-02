@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, ConfigDict
-from ..core.ids import generate_id
+from app.core.ids import generate_id
 from typing import Optional
 from datetime import datetime, timezone
 

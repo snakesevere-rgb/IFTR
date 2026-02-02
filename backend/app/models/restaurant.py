@@ -1,13 +1,14 @@
 from typing import List, Dict, Any
 
-from ..core.ids import generate_id
+from core.ids import generate_id
 from datetime import datetime, timezone
 from typing import Optional
-from pydantic import Field, ConfigDict, model_validator
+from pydantic import Field, ConfigDict, model_validator, validator
 from enum import Enum
-from .encrypted_models import EncryptedLocation
-from .general import IFTRBaseModel
-from user import UserRole
+from models.encrypted_models import EncryptedLocation
+from models.general import IFTRBaseModel
+from models.user import UserRole
+from models.menu_item import OptionType, MenuOption, MenuItem, MenuItemModifier
 import logging
 
 logger = logging.getLogger(__name__)
@@ -45,18 +46,14 @@ class VehicleType(str, Enum):
     BIKE = "bike"
     SKATES = "rollerskates/skateboard"
 
-# Restaurant Models
-class MenuItem(IFTRBaseModel):
-    item_id: str = Field(default_factory=lambda: generate_id("item"))
+class MenuCategory(IFTRBaseModel):
+    """Category for organizing menu items"""
+    category_id: str = Field(default_factory=lambda: generate_id("cat"))
     name: str
     description: str = ""
-    price: float
-    category: str = ""
+    display_order: int = 0
     image_url: Optional[str] = None
-    is_available: bool = True
-    is_surplus: bool = False
-    surplus_quantity: int = 0
-    surplus_expiry: Optional[datetime] = None
+    items: List[MenuItem] = Field(default_factory=list)
 
 class RestaurantHours(IFTRBaseModel):
     """Operating hours for a single day"""

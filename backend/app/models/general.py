@@ -24,10 +24,19 @@ from datetime import datetime, timezone
 from typing import Optional
 from pydantic import Field, ConfigDict, EmailStr, SecretStr, BaseModel
 import logging
-from ..core.ids import generate_id
+from core.ids import generate_id
 
 logger = logging.getLogger(__name__)
 logger = logging.getLogger(__name__)
+
+class UserRole(str, Enum):
+    """User roles in the system"""
+    CUSTOMER = "customer"  # Regular customer ordering food
+    DRIVER = "driver"  # Delivery driver
+    RESTAURANT_ADMIN = "restaurant_admin"  # Restaurant manager/owner
+    ORGANIZATION_ADMIN = "organization_admin"  # Food bank/charity admin
+    SUPPORT = "support"  # Customer support staff
+    ADMIN = "admin"  # System administrator
 
 class OrderStatus(str, Enum):
     PENDING = "pending"        # Charge customer but allow refund if restaurant declines
@@ -67,12 +76,19 @@ class DeliveryInstructionType(str, Enum):
     OTHER = "other"
 
 class CalendarPreference(str, Enum):
-    """Calendar preferences for users"""
-    GREGORIAN = "gregorian"
+    """Calendar preferences for cultural/religious needs"""
+    GREGORIAN = "gregorian"  # Default Western calendar
+    HIJRI = "hijri"  # Islamic calendar
+    HEBREW = "hebrew"  # Hebrew calendar
+    CHINESE = "chinese" # Chinese lunar calendar
+    BUDDHIST = "buddhist"  # Buddhist calendar
     JALALI = "jalali"
-    HIJRI = "hijri"
-    HEBREW = "hebrew"
-    CHINESE = "chinese"
+
+class AddressTier(str, Enum):
+    CUSTOMER_HOME = "customer_home"  # Full encryption
+    CUSTOMER_WORK = "customer_work"  # Full encryption
+    ORGANIZATION = "organization"  # Partial encryption (coordinates only)
+    PUBLIC_PLACE = "public_place"  # No encryption
 
 # Base Models
 # Base model for inheritance if needed

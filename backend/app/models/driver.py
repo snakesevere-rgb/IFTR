@@ -4,11 +4,11 @@ from pydantic import Field, ConfigDict, model_validator
 import logging
 
 # Import from core (encryption)
-from ..core.encryption import encrypt_data, decrypt_data
-from ..core.ids import generate_id  # if you have this
+from core.encryption import encrypt_data, decrypt_data
+from core.ids import generate_id  # if you have this
 
 # Import shared types from general
-from .general import VehicleType, IFTRBaseModel
+from models.general import VehicleType, IFTRBaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -65,15 +65,6 @@ class RoutePreferences(IFTRBaseModel):
         """Reset preferences at end of shift"""
         self.preferred_direction = None
         self.preferred_time_window = None
-
-# Driver Models
-class RoutePreferences(IFTRBaseModel):
-    revenue_vs_rest: int = Field(default=50, ge=0, le=100)  # 0 = maximize rest, 100 = maximize revenue
-    earn_vs_volunteer: int = Field(default=50, ge=0, le=100)  # 0 = volunteer focus, 100 = earn focus
-    adventure_mode: bool = False
-    end_destination: str = ""
-    end_time: str = ""
-    max_distance: int = Field(default=10, ge=1, le=100)
 
 # Driver Models
 class Driver(IFTRBaseModel):
